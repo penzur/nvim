@@ -80,15 +80,9 @@ return {
             eslint = {
                 settings = {
                     experimental = {
-                        useFlatConfig = false, -- Enable flat config mode
+                        useFlatConfig = false, -- Set to true if using eslint.config.js (flat config)
                     },
                 },
-                on_attach = function(_, bufnr)
-                    vim.api.nvim_create_autocmd("BufWritePre", {
-                        buffer = bufnr,
-                        command = "EslintFixAll",
-                    })
-                end,
             },
             -- ts_ls = {},
             vtsls = {
@@ -156,6 +150,7 @@ return {
         require("mason").setup()
 
         local ensure_installed = vim.tbl_keys(servers or {})
+        vim.list_extend(ensure_installed, { "prettierd", "eslint_d", "stylua" })
         require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
         require("mason-lspconfig").setup({

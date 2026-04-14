@@ -26,15 +26,15 @@ return { -- Autoformat
                 lsp_format_opt = "fallback"
             end
             return {
-                timeout_ms = 500,
+                timeout_ms = 1000,
                 lsp_format = lsp_format_opt,
             }
         end,
         formatters_by_ft = {
-            javascript = { "prettierd" },
-            javascriptreact = { "prettierd" },
-            typescript = { "prettierd" },
-            typescriptreact = { "prettierd" },
+            javascript = { "prettierd", "eslint_d" },
+            javascriptreact = { "prettierd", "eslint_d" },
+            typescript = { "prettierd", "eslint_d" },
+            typescriptreact = { "prettierd", "eslint_d" },
             json = { "prettierd" },
             jsonc = { "prettierd" },
             css = { "prettierd" },
