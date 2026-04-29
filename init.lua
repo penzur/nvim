@@ -8,7 +8,7 @@ vim.g.have_nerd_font = true
 
 -- options
 vim.opt.laststatus = 2
-vim.opt.number = true
+vim.opt.number = false
 vim.opt.relativenumber = true
 vim.opt.mouse = "a"
 vim.opt.showmode = false
@@ -100,23 +100,6 @@ vim.keymap.set("n", "'", "vi'")
 --     vim.lsp.inlay_hint.enable(true, { 0 })
 -- end
 
-vim.keymap.set("n", "<C-t>", function()
-	local tab = string.char(9)
-	local cmd = "tmux list-windows -a -F '#{session_name}:#{window_index}"
-		.. tab
-		.. "#{window_name} - #{pane_current_path}' | sed \"s|$HOME|~|g\" | fzf-tmux -h --reverse --delimiter='"
-		.. tab
-		.. "' --with-nth=2 2>/dev/null"
-	local selected = vim.fn.system(cmd)
-	selected = selected:gsub("%s+$", "")
-	if selected ~= "" then
-		local target = selected:match("^([^\t]+)")
-		if target then
-			vim.fn.system("tmux switch-client -t " .. vim.fn.shellescape(target))
-		end
-	end
-end, { noremap = true, silent = true, desc = "Switch tmux window" })
-
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 
 -- <escape> should close netrw, neogitstatus buffers
@@ -127,7 +110,13 @@ vim.api.nvim_create_autocmd("FileType", {
 		local bufnr = vim.api.nvim_get_current_buf()
 		vim.api.nvim_buf_set_keymap(bufnr, "n", "<escape>", ":bd!<CR>", opts)
 		if vim.bo[bufnr].filetype == "oil" then
-			vim.api.nvim_buf_set_keymap(bufnr, "n", "<C-p>", "<cmd>lua require('custom.plugins.oil-fuzzy').fuzzy_folders()<CR>", opts)
+			vim.api.nvim_buf_set_keymap(
+				bufnr,
+				"n",
+				"<C-p>",
+				"<cmd>lua require('custom.plugins.oil-fuzzy').fuzzy_folders()<CR>",
+				opts
+			)
 		end
 	end,
 })
