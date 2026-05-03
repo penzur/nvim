@@ -7,44 +7,46 @@ vim.g.maplocalleader = ' '
 vim.g.have_nerd_font = true
 
 -- basic
-vim.o.wrap = false
-vim.o.number = true
-vim.o.relativenumber = true
-vim.o.scrolloff = 3
-vim.o.swapfile = false
-vim.o.shortmess = 'atI'
-vim.o.clipboard = 'unnamedplus'
-vim.o.cursorline = true
-vim.o.colorcolumn = '80'
+vim.opt.wrap = false
+vim.opt.number = true
+vim.opt.relativenumber = true
+vim.opt.scrolloff = 3
+vim.opt.swapfile = false
+vim.opt.shortmess = 'atI'
+vim.opt.clipboard = 'unnamedplus'
+vim.opt.cursorline = false
+vim.opt.colorcolumn = '80'
+vim.opt.list = true
+vim.opt.listchars = { tab = "  ", trail = "·", nbsp = " " }
 
 
 -- indentation
-vim.o.tabstop = 2
-vim.o.shiftwidth = 2
-vim.o.softtabstop = 2
-vim.o.expandtab = true
-vim.o.autoindent = true
-vim.o.smartindent = true
+vim.opt.tabstop = 2
+vim.opt.shiftwidth = 2
+vim.opt.softtabstop = 2
+vim.opt.expandtab = true
+vim.opt.autoindent = true
+vim.opt.smartindent = true
 
 -- folding (treesitter-based)
-vim.o.foldenable = true
-vim.o.foldlevel = 99
-vim.o.foldlevelstart = 99
-vim.o.foldmethod = 'expr'
-vim.o.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+vim.opt.foldenable = true
+vim.opt.foldlevel = 99
+vim.opt.foldlevelstart = 99
+vim.opt.foldmethod = 'expr'
+vim.opt.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
 vim.opt.fillchars:append({ fold = ' ' })
 
 -- search
-vim.o.ignorecase = true
-vim.o.smartcase = true
-vim.o.hlsearch = false
-vim.o.incsearch = true
+vim.opt.ignorecase = true
+vim.opt.smartcase = true
+vim.opt.hlsearch = false
+vim.opt.incsearch = true
 
 -- visual
-vim.o.termguicolors = true
-vim.o.winborder = 'rounded'
-vim.o.winwidth = 38
-vim.o.signcolumn = 'yes'
+vim.opt.termguicolors = true
+vim.opt.winborder = 'rounded'
+vim.opt.winwidth = 38
+vim.opt.signcolumn = 'yes'
 
 -- keymaps
 vim.keymap.set('n', ';', ':')
@@ -102,7 +104,7 @@ local function on_color()
   vim.api.nvim_set_hl(0, 'TablineFill', { bg = 'NONE', ctermbg = 'NONE' })
   vim.api.nvim_set_hl(0, 'Tabline', { bg = '#EEEEEE', ctermbg = 'NONE', fg = '#3333FF' })
   vim.api.nvim_set_hl(0, 'TablineSel', { bg = '#3333ff', ctermbg = 'NONE', fg = '#ffffff', bold = true })
-  vim.api.nvim_set_hl(0, 'CursorLine', { bg = '#223249' })
+  -- vim.api.nvim_set_hl(0, 'CursorLine', { bg = '#223249' })
   -- vim.api.nvim_set_hl(0, 'Visual', { bg = '#00094F' })
   vim.api.nvim_set_hl(0, 'CursorLineNr', { bg = 'NONE' })
 end
@@ -110,7 +112,7 @@ on_color()
 vim.api.nvim_create_autocmd('ColorScheme', { callback = on_color })
 
 -- completion
-vim.o.completeopt = 'menu,menuone,noinsert,popup'
+vim.opt.completeopt = 'menu,menuone,noinsert,popup'
 -- completion: arrows cycle, Enter confirms, Esc cancels
 vim.keymap.set('i', '<Down>', function()
   return vim.fn.pumvisible() == 1 and '<C-n>' or '<Down>'
@@ -153,12 +155,12 @@ local function set_indent(bufnr, sw, expand)
   vim.bo[bufnr].expandtab = expand
   vim.bo[bufnr].shiftwidth = sw
   vim.bo[bufnr].tabstop = sw
-  vim.bo[bufnr].softtabstop = expand and sw or 0
+  vim.bo[bufnr].softtabstop = expand and sw or 4
 end
 
 vim.api.nvim_create_autocmd('FileType', {
   pattern = { 'go', 'make', 'gitconfig' },
-  callback = function(a) set_indent(a.buf, 4, true) end,
+  callback = function(a) set_indent(a.buf, 4, false) end,
 })
 
 vim.api.nvim_create_autocmd('FileType', {
@@ -291,7 +293,7 @@ vim.lsp.enable({
 })
 
 -- auto-session
-vim.o.sessionoptions = 'blank,buffers,curdir,help,tabpages,winsize,winpos,terminal,localoptions'
+vim.opt.sessionoptions = 'blank,buffers,curdir,help,tabpages,winsize,winpos,terminal,localoptions'
 vim.pack.add { 'https://github.com/rmagatti/auto-session' }
 require('auto-session').setup {
   suppressed_dirs = { '~/', '~/Downloads', '/' },
