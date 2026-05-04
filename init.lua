@@ -18,7 +18,7 @@ vim.opt.cursorline = false
 vim.opt.colorcolumn = '80'
 vim.opt.list = true
 vim.opt.listchars = { tab = "  ", trail = "·", nbsp = " " }
-
+vim.opt.undofile = true
 
 -- indentation
 vim.opt.tabstop = 2
@@ -57,15 +57,16 @@ vim.keymap.set("n", "<C-u>", "{")
 vim.keymap.set("n", "<C-d>", "}")
 vim.keymap.set("n", "<leader>bn", ":bn<CR>")
 vim.keymap.set("n", "<leader>bp", ":bp<CR>")
-vim.keymap.set("n", "<C-l>", ":tabNext<CR>")
-vim.keymap.set("n", "<C-h>", ":tabprevious<CR>")
+-- vim.keymap.set("n", "<C-l>", ":tabNext<CR>")
+-- vim.keymap.set("n", "<C-h>", ":tabprevious<CR>")
 vim.keymap.set("n", "<C-s>", ":w<CR>")
 
 -- colorscheme (treesitter handles highlighting, no `syntax on`)
-vim.pack.add { 'https://github.com/rebelot/kanagawa.nvim' }
-vim.cmd.colorscheme('kanagawa-dragon')
+vim.pack.add { 'https://github.com/folke/tokyonight.nvim' }
+vim.cmd.colorscheme('tokyonight-day')
 -- highlights
 local function on_color()
+  -- if vim.g.colors_name == 'tokyonight-day' then return end
   for _, group in ipairs({
     'Normal', 'NormalNC', 'NormalFloat', 'FloatBorder',
     'SignColumn', 'EndOfBuffer', 'WinSeparator',
@@ -104,9 +105,8 @@ local function on_color()
   vim.api.nvim_set_hl(0, 'TablineFill', { bg = 'NONE', ctermbg = 'NONE' })
   vim.api.nvim_set_hl(0, 'Tabline', { bg = '#EEEEEE', ctermbg = 'NONE', fg = '#3333FF' })
   vim.api.nvim_set_hl(0, 'TablineSel', { bg = '#3333ff', ctermbg = 'NONE', fg = '#ffffff', bold = true })
-  -- vim.api.nvim_set_hl(0, 'CursorLine', { bg = '#223249' })
-  -- vim.api.nvim_set_hl(0, 'Visual', { bg = '#00094F' })
   vim.api.nvim_set_hl(0, 'CursorLineNr', { bg = 'NONE' })
+  vim.api.nvim_set_hl(0, 'ColorColumn', { bg = 'NONE' })
 end
 on_color()
 vim.api.nvim_create_autocmd('ColorScheme', { callback = on_color })
@@ -290,6 +290,7 @@ vim.lsp.enable({
   'jsonls', -- json-language-server (from vscode-langservers-extracted)
   'html',   -- html-language-server (same package)
   'cssls',  -- css-language-server (same package)
+  'emmet_language_server',
 })
 
 -- auto-session
@@ -310,6 +311,10 @@ require('mini.icons').mock_nvim_web_devicons() -- so oil/telescope find icons
 
 -- render markdown
 vim.pack.add { 'https://github.com/MeanderingProgrammer/render-markdown.nvim' }
+require('render-markdown').setup {}
+for _, g in ipairs({ 'RenderMarkdownCode', 'RenderMarkdownCodeInline' }) do
+  vim.api.nvim_set_hl(0, g, { bg = 'NONE', ctermbg = 'NONE', fg = 'NONE' })
+end
 
 -- neogit
 vim.pack.add { 'https://github.com/neogitorg/neogit' }
@@ -358,7 +363,7 @@ end
 vim.keymap.set('n', '<C-p>', tel('find_files'), { desc = 'find files' })
 vim.keymap.set('n', '<C-g>', tel('live_grep'), { desc = 'live grep' })
 vim.keymap.set('n', '<C-b>', tel('buffers'), { desc = 'buffers' })
-vim.keymap.set('n', '<leader>ht', tel('help_tags'), { desc = 'help tags' })
+vim.keymap.set('n', '<C-h>', tel('help_tags'), { desc = 'help tags' })
 vim.keymap.set('n', '<C-f>', tel('lsp_document_symbols'), { desc = 'doc symbols' })
 
 -- tree-sitter (main branch API)
