@@ -99,9 +99,9 @@ local function on_color()
   end
 
   -- others
-  vim.api.nvim_set_hl(0, 'LineNr', { bg = 'NONE', ctermbg = 'NONE', fg = '#666666' })
-  vim.api.nvim_set_hl(0, 'LineNrAbove', { bg = 'NONE', ctermbg = 'NONE', fg = '#CCCCCC' })
-  vim.api.nvim_set_hl(0, 'LineNrBelow', { bg = 'NONE', ctermbg = 'NONE', fg = '#CCCCCC' })
+  vim.api.nvim_set_hl(0, 'LineNr', { bg = 'NONE', ctermbg = 'NONE', fg = '#777777' })
+  vim.api.nvim_set_hl(0, 'LineNrAbove', { bg = 'NONE', ctermbg = 'NONE', fg = '#444444' })
+  vim.api.nvim_set_hl(0, 'LineNrBelow', { bg = 'NONE', ctermbg = 'NONE', fg = '#444444' })
   vim.api.nvim_set_hl(0, 'TablineFill', { bg = 'NONE', ctermbg = 'NONE' })
   vim.api.nvim_set_hl(0, 'Tabline', { bg = '#EEEEEE', ctermbg = 'NONE', fg = '#3333FF' })
   vim.api.nvim_set_hl(0, 'TablineSel', { bg = '#3333ff', ctermbg = 'NONE', fg = '#ffffff', bold = true })
