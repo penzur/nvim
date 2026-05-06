@@ -63,7 +63,7 @@ vim.keymap.set("n", "<C-s>", ":w<CR>")
 
 -- colorscheme (treesitter handles highlighting, no `syntax on`)
 vim.pack.add { 'https://github.com/folke/tokyonight.nvim' }
-vim.cmd.colorscheme('tokyonight-day')
+vim.cmd.colorscheme('retrobox')
 -- highlights
 local function on_color()
   -- if vim.g.colors_name == 'tokyonight-day' then return end
@@ -88,8 +88,8 @@ local function on_color()
   end
 
   -- prompt (input) border: light blue
-  vim.api.nvim_set_hl(0, 'TelescopePromptBorder', { bg = 'NONE', ctermbg = 'NONE', fg = '#bf5700' })
-  vim.api.nvim_set_hl(0, 'TelescopePromptTitle', { bg = 'NONE', ctermbg = 'NONE', fg = '#bf5700' })
+  vim.api.nvim_set_hl(0, 'TelescopePromptBorder', { bg = 'NONE', ctermbg = 'NONE', fg = '#FB5944' })
+  vim.api.nvim_set_hl(0, 'TelescopePromptTitle', { bg = 'NONE', ctermbg = 'NONE', fg = '#FB5944' })
 
   -- diagnostic signs: transparent bg, keep their fg colors
   for _, sev in ipairs({ 'Error', 'Warn', 'Info', 'Hint' }) do
@@ -100,8 +100,8 @@ local function on_color()
 
   -- others
   vim.api.nvim_set_hl(0, 'LineNr', { bg = 'NONE', ctermbg = 'NONE', fg = '#666666' })
-  vim.api.nvim_set_hl(0, 'LineNrAbove', { bg = 'NONE', ctermbg = 'NONE', fg = '#333333' })
-  vim.api.nvim_set_hl(0, 'LineNrBelow', { bg = 'NONE', ctermbg = 'NONE', fg = '#333333' })
+  vim.api.nvim_set_hl(0, 'LineNrAbove', { bg = 'NONE', ctermbg = 'NONE', fg = '#CCCCCC' })
+  vim.api.nvim_set_hl(0, 'LineNrBelow', { bg = 'NONE', ctermbg = 'NONE', fg = '#CCCCCC' })
   vim.api.nvim_set_hl(0, 'TablineFill', { bg = 'NONE', ctermbg = 'NONE' })
   vim.api.nvim_set_hl(0, 'Tabline', { bg = '#EEEEEE', ctermbg = 'NONE', fg = '#3333FF' })
   vim.api.nvim_set_hl(0, 'TablineSel', { bg = '#3333ff', ctermbg = 'NONE', fg = '#ffffff', bold = true })
@@ -319,6 +319,10 @@ end
 -- neogit
 vim.pack.add { 'https://github.com/neogitorg/neogit' }
 vim.keymap.set("n", "<leader>gs", ":Neogit<CR>")
+
+-- gitsigns (git diff in signcolumn)
+vim.pack.add { 'https://github.com/lewis6991/gitsigns.nvim' }
+require('gitsigns').setup {}
 
 -- vim-visual-multi (Sublime/VSCode-style multi-cursor)
 vim.pack.add { 'https://github.com/mg979/vim-visual-multi' }
