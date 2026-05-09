@@ -25,8 +25,6 @@ vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.softtabstop = 2
 vim.opt.expandtab = true
-vim.opt.autoindent = true
-vim.opt.smartindent = true
 
 -- folding (treesitter-based)
 vim.opt.foldenable = true
@@ -164,7 +162,7 @@ vim.api.nvim_create_autocmd('FileType', {
 })
 
 vim.api.nvim_create_autocmd('FileType', {
-  pattern = { 'python', 'rust', 'java', 'c', 'cpp' },
+  pattern = { 'python', 'rust', 'java', 'c', 'cpp', 'html', 'css' },
   callback = function(a) set_indent(a.buf, 4, true) end,
 })
 
@@ -227,6 +225,29 @@ require('vim._core.ui2').enable({
   },
 })
 
+-- mason (LSP installer)
+vim.pack.add {
+  'https://github.com/williamboman/mason.nvim',
+  'https://github.com/williamboman/mason-lspconfig.nvim',
+}
+require('mason').setup {}
+require('mason-lspconfig').setup {
+  automatic_enable = false,
+  ensure_installed = {
+    'gopls',
+    'rust_analyzer',
+    'lua_ls',
+    'vtsls',
+    'eslint',
+    'biome',
+    'jsonls',
+    'html',
+    'cssls',
+    'emmet_language_server',
+  },
+}
+vim.keymap.set('n', '<leader>M', ':Mason<CR>', { desc = 'open mason' })
+
 -- lsp
 vim.pack.add { 'https://github.com/neovim/nvim-lspconfig' }
 vim.api.nvim_create_autocmd('LspAttach', {
@@ -263,8 +284,20 @@ vim.api.nvim_create_autocmd('LspAttach', {
           end
         end,
       })
-    elseif client.name == 'ts_ls' then
-      -- skip: let ESLint or Biome format
+    elseif client.name == 'biome' then
+      vim.api.nvim_create_autocmd('BufWritePre', {
+        buffer = buf,
+        callback = function()
+          local fname = vim.api.nvim_buf_get_name(buf)
+          local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+          local output = vim.fn.system({ 'biome', 'check', '--write', '--stdin-file-path', fname }, table.concat(lines, '\n'))
+          if #output > 0 then
+            vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(output, '\n', { plain = true }))
+          end
+        end,
+      })
+    elseif client.name == 'vtsls' then
+      -- skip: let Biome format
     elseif client:supports_method('textDocument/formatting') then
       vim.api.nvim_create_autocmd('BufWritePre', {
         buffer = buf,
@@ -284,7 +317,7 @@ vim.lsp.enable({
   'gopls',
   'rust_analyzer',
   'lua_ls',
-  'ts_ls',  -- typescript-language-server (npm i -g typescript typescript-language-server)
+  'vtsls',  -- vtsls (npm i -g @vtsls/language-server)
   'eslint', -- vscode-langservers-extracted (npm i -g vscode-langservers-extracted)
   'biome',  -- biome (npm i -g @biomejs/biome) - gated by biome.json
   'jsonls', -- json-language-server (from vscode-langservers-extracted)
@@ -353,9 +386,18 @@ local function tel(picker)
       local actions = require('telescope.actions')
       require('telescope').setup {
         defaults = {
+          file_ignore_patterns = {
+            'node_modules/', '%.git/', 'dist/', 'build/', '%.lock',
+            '%.min%.js', '%.min%.css', '__pycache__/', '%.pyc',
+          },
           mappings = {
             i = { ['<esc>'] = actions.close },
             n = { ['<esc>'] = actions.close },
+          },
+        },
+        pickers = {
+          find_files = {
+            find_command = { 'fd', '--type', 'f', '--hidden', '--follow', '--exclude', '.git' },
           },
         },
       }
@@ -383,10 +425,15 @@ local ts_parsers = {
 vim.treesitter.language.register('json', 'jsonc')
 require('nvim-treesitter').install(ts_parsers)
 
+local ts_no_indent = { html = true, css = true }
 vim.api.nvim_create_autocmd('FileType', {
   pattern = ts_parsers,
   callback = function(args)
     pcall(vim.treesitter.start, args.buf)
-    vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+    if ts_no_indent[args.match] then
+      vim.bo[args.buf].indentexpr = ''
+    else
+      vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+    end
   end,
 })

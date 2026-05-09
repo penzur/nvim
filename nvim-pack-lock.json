@@ -4,6 +4,10 @@
       "rev": "62437532b38495551410b3f377bcf4aaac574ebe",
       "src": "https://github.com/rmagatti/auto-session"
     },
+    "emmet-vim": {
+      "rev": "92ef2f74f4093edc99db5e9e4cf7e40116a85bd6",
+      "src": "https://github.com/mattn/emmet-vim"
+    },
     "gitsigns.nvim": {
       "rev": "dd3f588bacbeb041be6facf1742e42097f62165d",
       "src": "https://github.com/lewis6991/gitsigns.nvim"
