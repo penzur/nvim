@@ -290,7 +290,15 @@ vim.api.nvim_create_autocmd('LspAttach', {
         callback = function()
           local fname = vim.api.nvim_buf_get_name(buf)
           local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-          local output = vim.fn.system({ 'biome', 'check', '--write', '--stdin-file-path', fname }, table.concat(lines, '\n'))
+
+          local output = vim.fn.system({
+            'biome',
+            'check',
+            '--write',
+            '--stdin-file-path',
+            fname,
+          }, table.concat(lines, '\n'))
+
           if #output > 0 then
             vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(output, '\n', { plain = true }))
           end
@@ -391,7 +399,10 @@ local function tel(picker)
             '%.min%.js', '%.min%.css', '__pycache__/', '%.pyc',
           },
           mappings = {
-            i = { ['<esc>'] = actions.close },
+            i = { ['<esc>'] = actions.close,
+              ['<C-j>'] = actions.move_selection_next,
+              ['<C-k>'] = actions.move_selection_previous,
+            },
             n = { ['<esc>'] = actions.close },
           },
         },
@@ -408,9 +419,9 @@ local function tel(picker)
 end
 vim.keymap.set('n', '<C-p>', tel('find_files'), { desc = 'find files' })
 vim.keymap.set('n', '<C-g>', tel('live_grep'), { desc = 'live grep' })
-vim.keymap.set('n', '<C-b>', tel('buffers'), { desc = 'buffers' })
-vim.keymap.set('n', '<C-h>', tel('help_tags'), { desc = 'help tags' })
-vim.keymap.set('n', '<C-f>', tel('lsp_document_symbols'), { desc = 'doc symbols' })
+vim.keymap.set('n', '<leader>sb', tel('buffers'), { desc = 'buffers' })
+vim.keymap.set('n', '<leader>sh', tel('help_tags'), { desc = 'help tags' })
+vim.keymap.set('n', '<leader>sy', tel('lsp_document_symbols'), { desc = 'doc symbols' })
 
 -- tree-sitter (main branch API)
 vim.pack.add { { src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' } }
