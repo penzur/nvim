@@ -162,7 +162,7 @@ vim.api.nvim_create_autocmd('FileType', {
 })
 
 vim.api.nvim_create_autocmd('FileType', {
-  pattern = { 'python', 'rust', 'java', 'c', 'cpp', 'html', 'css' },
+  pattern = { 'python', 'rust', 'java', 'c', 'cpp' },
   callback = function(a) set_indent(a.buf, 4, true) end,
 })
 
