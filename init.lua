@@ -25,6 +25,8 @@ vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.softtabstop = 2
 vim.opt.expandtab = true
+vim.opt.autoindent = true
+vim.opt.smartindent = true
 
 -- folding (treesitter-based)
 vim.opt.foldenable = true
@@ -53,15 +55,16 @@ vim.keymap.set("n", "<C-j>", "2<CR>")
 vim.keymap.set("n", "<C-k>", "2-")
 vim.keymap.set("n", "<C-u>", "{")
 vim.keymap.set("n", "<C-d>", "}")
-vim.keymap.set("n", "<leader>bn", ":bn<CR>")
-vim.keymap.set("n", "<leader>bp", ":bp<CR>")
+vim.keymap.set("n", "<C-l>", ":bn<CR>")
+vim.keymap.set("n", "<C-h>", ":bp<CR>")
 -- vim.keymap.set("n", "<C-l>", ":tabNext<CR>")
 -- vim.keymap.set("n", "<C-h>", ":tabprevious<CR>")
 vim.keymap.set("n", "<C-s>", ":w<CR>")
 
 -- colorscheme (treesitter handles highlighting, no `syntax on`)
 vim.pack.add { 'https://github.com/folke/tokyonight.nvim' }
-vim.cmd.colorscheme('retrobox')
+vim.pack.add { 'https://github.com/rebelot/kanagawa.nvim' }
+vim.cmd.colorscheme('kanagawa')
 -- highlights
 local function on_color()
   -- if vim.g.colors_name == 'tokyonight-day' then return end
@@ -119,7 +122,10 @@ vim.keymap.set('i', '<Up>', function()
   return vim.fn.pumvisible() == 1 and '<C-p>' or '<Up>'
 end, { expr = true })
 vim.keymap.set('i', '<CR>', function()
-  return vim.fn.pumvisible() == 1 and '<C-y>' or '<CR>'
+  if vim.fn.pumvisible() == 1 then
+    return '<C-y>'
+  end
+  return require('mini.pairs').cr()
 end, { expr = true })
 vim.keymap.set('i', '<Tab>', function()
   return vim.fn.pumvisible() == 1 and '<C-n>' or '<Tab>'
@@ -264,6 +270,18 @@ vim.api.nvim_create_autocmd('LspAttach', {
     vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { buffer = buf })
     vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
 
+    -- signature help: auto-trigger on ( and ,
+    if client:supports_method('textDocument/signatureHelp') then
+      vim.keymap.set('i', '(', function()
+        vim.api.nvim_feedkeys('(', 'n', false)
+        vim.defer_fn(function() vim.lsp.buf.signature_help() end, 50)
+      end, { buffer = buf })
+      vim.keymap.set('i', ',', function()
+        vim.api.nvim_feedkeys(',', 'n', false)
+        vim.defer_fn(function() vim.lsp.buf.signature_help() end, 50)
+      end, { buffer = buf })
+    end
+
     -- format on save (per-client logic)
     if client.name == 'eslint' then
       -- run ESLint fixAll on save (sync)
@@ -300,7 +318,9 @@ vim.api.nvim_create_autocmd('LspAttach', {
           }, table.concat(lines, '\n'))
 
           if #output > 0 then
-            vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split(output, '\n', { plain = true }))
+            local result = vim.split(output, '\n', { plain = true })
+            if result[#result] == '' then table.remove(result) end
+            vim.api.nvim_buf_set_lines(buf, 0, -1, false, result)
           end
         end,
       })
