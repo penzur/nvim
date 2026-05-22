@@ -101,8 +101,8 @@ local function on_color()
   end
 
   -- prompt (input) border: light blue
-  vim.api.nvim_set_hl(0, 'TelescopePromptBorder', { bg = 'NONE', ctermbg = 'NONE', fg = '#FB5944' })
-  vim.api.nvim_set_hl(0, 'TelescopePromptTitle', { bg = 'NONE', ctermbg = 'NONE', fg = '#FB5944' })
+  vim.api.nvim_set_hl(0, 'TelescopePromptBorder', { bg = 'NONE', ctermbg = 'NONE', fg = '#AA66FF' })
+  vim.api.nvim_set_hl(0, 'TelescopePromptTitle', { bg = 'NONE', ctermbg = 'NONE', fg = '#AA66FF' })
 
   -- diagnostic signs: transparent bg, keep their fg colors
   for _, sev in ipairs({ 'Error', 'Warn', 'Info', 'Hint' }) do
@@ -116,8 +116,8 @@ local function on_color()
   vim.api.nvim_set_hl(0, 'LineNrAbove', { bg = 'NONE', ctermbg = 'NONE', fg = '#444444' })
   vim.api.nvim_set_hl(0, 'LineNrBelow', { bg = 'NONE', ctermbg = 'NONE', fg = '#444444' })
   vim.api.nvim_set_hl(0, 'TablineFill', { bg = 'NONE', ctermbg = 'NONE' })
-  vim.api.nvim_set_hl(0, 'Tabline', { bg = '#EEEEEE', ctermbg = 'NONE', fg = '#3333FF' })
-  vim.api.nvim_set_hl(0, 'TablineSel', { bg = '#3333ff', ctermbg = 'NONE', fg = '#ffffff', bold = true })
+  vim.api.nvim_set_hl(0, 'Tabline', { bg = '#EEEEEE', ctermbg = 'NONE', fg = '#6666FF' })
+  vim.api.nvim_set_hl(0, 'TablineSel', { bg = '#6666FF', ctermbg = 'NONE', fg = '#ffffff', bold = true })
   vim.api.nvim_set_hl(0, 'CursorLineNr', { bg = 'NONE' })
   vim.api.nvim_set_hl(0, 'ColorColumn', { bg = 'NONE' })
 end
@@ -242,7 +242,7 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
   if vim.v.shell_error ~= 0 then
     vim.api.nvim_echo({
       { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
-      { out, "WarningMsg" },
+      { out,                            "WarningMsg" },
       { "\nPress any key to exit..." },
     }, true, {})
     vim.fn.getchar()
@@ -253,7 +253,7 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
   -- colorschemes
-  { "folke/tokyonight.nvim", lazy = false, priority = 1000 },
+  { "folke/tokyonight.nvim",  lazy = false,     priority = 1000 },
   {
     "rebelot/kanagawa.nvim",
     lazy = false,
@@ -340,7 +340,8 @@ require("lazy").setup({
                 for cid, r in pairs(res or {}) do
                   for _, action in ipairs(r.result or {}) do
                     if action.edit then
-                      vim.lsp.util.apply_workspace_edit(action.edit, vim.lsp.get_client_by_id(cid).offset_encoding or 'utf-16')
+                      vim.lsp.util.apply_workspace_edit(action.edit,
+                        vim.lsp.get_client_by_id(cid).offset_encoding or 'utf-16')
                     end
                   end
                 end
@@ -479,10 +480,10 @@ require("lazy").setup({
     dependencies = { "nvim-lua/plenary.nvim" },
     cmd = "Telescope",
     keys = {
-      { "<C-p>", function() require('telescope.builtin').find_files() end, desc = "find files" },
-      { "<C-g>", function() require('telescope.builtin').live_grep() end, desc = "live grep" },
-      { "<leader>sb", function() require('telescope.builtin').buffers() end, desc = "buffers" },
-      { "<leader>sh", function() require('telescope.builtin').help_tags() end, desc = "help tags" },
+      { "<C-p>",      function() require('telescope.builtin').find_files() end,           desc = "find files" },
+      { "<C-g>",      function() require('telescope.builtin').live_grep() end,            desc = "live grep" },
+      { "<leader>sb", function() require('telescope.builtin').buffers() end,              desc = "buffers" },
+      { "<leader>sh", function() require('telescope.builtin').help_tags() end,            desc = "help tags" },
       { "<leader>sy", function() require('telescope.builtin').lsp_document_symbols() end, desc = "doc symbols" },
     },
     config = function()
