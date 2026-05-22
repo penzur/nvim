@@ -61,10 +61,22 @@ vim.keymap.set("n", "<C-h>", ":bp<CR>")
 -- vim.keymap.set("n", "<C-h>", ":tabprevious<CR>")
 vim.keymap.set("n", "<C-s>", ":w<CR>")
 
--- colorscheme (treesitter handles highlighting, no `syntax on`)
-vim.pack.add { 'https://github.com/folke/tokyonight.nvim' }
-vim.pack.add { 'https://github.com/rebelot/kanagawa.nvim' }
-vim.cmd.colorscheme('kanagawa')
+-- diagnostics
+vim.keymap.set("n", "<leader>dl", vim.diagnostic.setloclist, { desc = "Open diagnostic [Q]uickfix [L]ist" })
+vim.keymap.set("n", "<leader>dd", vim.diagnostic.open_float, { desc = "Open diagnostic [Q]uickfix [D]iagnostics" })
+
+-- quickfix
+vim.keymap.set('n', '<leader>co', '<cmd>copen<cr>', { desc = 'open quickfix' })
+vim.keymap.set('n', '<leader>cn', '<cmd>cnext<cr>', { desc = 'next quickfix' })
+vim.keymap.set('n', '<leader>cp', '<cmd>cprev<cr>', { desc = 'prev quickfix' })
+vim.keymap.set('n', '<leader>cc', '<cmd>cclose<cr>', { desc = 'close quickfix' })
+
+-- mason
+vim.keymap.set('n', '<leader>M', ':Mason<CR>', { desc = 'open mason' })
+
+-- auto-session
+vim.keymap.set('n', '<C-e>', '<cmd>AutoSession search<cr>', { desc = 'session search' })
+
 -- highlights
 local function on_color()
   -- if vim.g.colors_name == 'tokyonight-day' then return end
@@ -109,7 +121,6 @@ local function on_color()
   vim.api.nvim_set_hl(0, 'CursorLineNr', { bg = 'NONE' })
   vim.api.nvim_set_hl(0, 'ColorColumn', { bg = 'NONE' })
 end
-on_color()
 vim.api.nvim_create_autocmd('ColorScheme', { callback = on_color })
 
 -- completion
@@ -198,14 +209,6 @@ vim.diagnostic.config({
   underline = true,
   update_in_insert = false,
 })
-vim.keymap.set("n", "<leader>dl", vim.diagnostic.setloclist, { desc = "Open diagnostic [Q]uickfix [L]ist" })
-vim.keymap.set("n", "<leader>dd", vim.diagnostic.open_float, { desc = "Open diagnostic [Q]uickfix [D]iagnostics" })
-
--- quickfix
-vim.keymap.set('n', '<leader>co', '<cmd>copen<cr>', { desc = 'open quickfix' })
-vim.keymap.set('n', '<leader>cn', '<cmd>cnext<cr>', { desc = 'next quickfix' })
-vim.keymap.set('n', '<leader>cp', '<cmd>cprev<cr>', { desc = 'prev quickfix' })
-vim.keymap.set('n', '<leader>cc', '<cmd>cclose<cr>', { desc = 'close quickfix' })
 
 require('vim._core.ui2').enable({
   enable = true, -- Whether to enable or disable the UI.
@@ -231,186 +234,258 @@ require('vim._core.ui2').enable({
   },
 })
 
--- mason (LSP installer)
-vim.pack.add {
-  'https://github.com/williamboman/mason.nvim',
-  'https://github.com/williamboman/mason-lspconfig.nvim',
-}
-require('mason').setup {}
-require('mason-lspconfig').setup {
-  automatic_enable = false,
-  ensure_installed = {
-    'gopls',
-    'rust_analyzer',
-    'lua_ls',
-    'vtsls',
-    'eslint',
-    'biome',
-    'jsonls',
-    'html',
-    'cssls',
-    'emmet_language_server',
-  },
-}
-vim.keymap.set('n', '<leader>M', ':Mason<CR>', { desc = 'open mason' })
-
--- lsp
-vim.pack.add { 'https://github.com/neovim/nvim-lspconfig' }
-vim.api.nvim_create_autocmd('LspAttach', {
-  callback = function(args)
-    local client = vim.lsp.get_client_by_id(args.data.client_id)
-    if not client then return end
-    -- Enable inlay hints
-    -- if client:supports_method('textDocument/inlayHint') then
-    --   vim.lsp.inlay_hint.enable(true, { bufnr = args.buf })
-    -- end
-    -- Basic LSP keymaps (optional)
-    local buf = args.buf
-    vim.keymap.set('n', 'K', vim.lsp.buf.hover, { buffer = buf })
-    vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { buffer = buf })
-    vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
-
-    -- signature help: auto-trigger on ( and ,
-    if client:supports_method('textDocument/signatureHelp') then
-      vim.keymap.set('i', '(', function()
-        vim.api.nvim_feedkeys('(', 'n', false)
-        vim.defer_fn(function() vim.lsp.buf.signature_help() end, 50)
-      end, { buffer = buf })
-      vim.keymap.set('i', ',', function()
-        vim.api.nvim_feedkeys(',', 'n', false)
-        vim.defer_fn(function() vim.lsp.buf.signature_help() end, 50)
-      end, { buffer = buf })
-    end
-
-    -- format on save (per-client logic)
-    if client.name == 'eslint' then
-      -- run ESLint fixAll on save (sync)
-      vim.api.nvim_create_autocmd('BufWritePre', {
-        buffer = buf,
-        callback = function()
-          ---@diagnostic disable-next-line: inject-field
-          local params = vim.lsp.util.make_range_params(0, client.offset_encoding or 'utf-16')
-          ---@diagnostic disable-next-line: inject-field
-          params.context = { only = { 'source.fixAll.eslint' }, diagnostics = {} }
-          local res = vim.lsp.buf_request_sync(buf, 'textDocument/codeAction', params, 2000)
-          for cid, r in pairs(res or {}) do
-            for _, action in ipairs(r.result or {}) do
-              if action.edit then
-                vim.lsp.util.apply_workspace_edit(action.edit, vim.lsp.get_client_by_id(cid).offset_encoding or 'utf-16')
-              end
-            end
-          end
-        end,
-      })
-    elseif client.name == 'biome' then
-      vim.api.nvim_create_autocmd('BufWritePre', {
-        buffer = buf,
-        callback = function()
-          local fname = vim.api.nvim_buf_get_name(buf)
-          local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-
-          local output = vim.fn.system({
-            'biome',
-            'check',
-            '--write',
-            '--stdin-file-path',
-            fname,
-          }, table.concat(lines, '\n'))
-
-          if #output > 0 then
-            local result = vim.split(output, '\n', { plain = true })
-            if result[#result] == '' then table.remove(result) end
-            vim.api.nvim_buf_set_lines(buf, 0, -1, false, result)
-          end
-        end,
-      })
-    elseif client.name == 'vtsls' then
-      -- skip: let Biome format
-    elseif client:supports_method('textDocument/formatting') then
-      vim.api.nvim_create_autocmd('BufWritePre', {
-        buffer = buf,
-        callback = function()
-          vim.lsp.buf.format({ bufnr = buf, async = false, timeout_ms = 2000, id = client.id })
-        end,
-      })
-    end
+-- bootstrap lazy.nvim
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+  local lazyrepo = "https://github.com/folke/lazy.nvim.git"
+  local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
+  if vim.v.shell_error ~= 0 then
+    vim.api.nvim_echo({
+      { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
+      { out, "WarningMsg" },
+      { "\nPress any key to exit..." },
+    }, true, {})
+    vim.fn.getchar()
+    os.exit(1)
   end
-})
--- biome only attaches when project has biome config
-vim.lsp.config('biome', {
-  root_markers = { 'biome.json', 'biome.jsonc' },
-})
-
-vim.lsp.enable({
-  'gopls',
-  'rust_analyzer',
-  'lua_ls',
-  'vtsls',  -- vtsls (npm i -g @vtsls/language-server)
-  'eslint', -- vscode-langservers-extracted (npm i -g vscode-langservers-extracted)
-  'biome',  -- biome (npm i -g @biomejs/biome) - gated by biome.json
-  'jsonls', -- json-language-server (from vscode-langservers-extracted)
-  'html',   -- html-language-server (same package)
-  'cssls',  -- css-language-server (same package)
-  'emmet_language_server',
-})
-
--- auto-session
-vim.opt.sessionoptions = 'blank,buffers,curdir,help,tabpages,winsize,winpos,terminal,localoptions'
-vim.pack.add { 'https://github.com/rmagatti/auto-session' }
-require('auto-session').setup {
-  suppressed_dirs = { '~/', '~/Downloads', '/' },
-}
-vim.keymap.set('n', '<C-e>', '<cmd>AutoSession search<cr>', { desc = 'session search' })
-
--- mini.nvim (statusline + surround)
-vim.pack.add { 'https://github.com/echasnovski/mini.nvim' }
-require('mini.statusline').setup {}
-require('mini.surround').setup {}
-require('mini.pairs').setup {}
-require('mini.icons').setup {}
-require('mini.icons').mock_nvim_web_devicons() -- so oil/telescope find icons
-
--- render markdown
-vim.pack.add { 'https://github.com/MeanderingProgrammer/render-markdown.nvim' }
-require('render-markdown').setup {}
-for _, g in ipairs({ 'RenderMarkdownCode', 'RenderMarkdownCodeInline' }) do
-  vim.api.nvim_set_hl(0, g, { bg = 'NONE', ctermbg = 'NONE', fg = 'NONE' })
 end
+vim.opt.rtp:prepend(lazypath)
 
--- neogit
-vim.pack.add { 'https://github.com/neogitorg/neogit' }
-vim.keymap.set("n", "<leader>gs", ":Neogit<CR>")
+require("lazy").setup({
+  -- colorschemes
+  { "folke/tokyonight.nvim", lazy = false, priority = 1000 },
+  {
+    "rebelot/kanagawa.nvim",
+    lazy = false,
+    priority = 1000,
+    config = function()
+      vim.cmd.colorscheme('kanagawa')
+    end,
+  },
 
--- gitsigns (git diff in signcolumn)
-vim.pack.add { 'https://github.com/lewis6991/gitsigns.nvim' }
-require('gitsigns').setup {}
+  -- mason
+  {
+    "williamboman/mason.nvim",
+    cmd = "Mason",
+    build = ":MasonUpdate",
+    config = function()
+      require('mason').setup {}
+    end,
+  },
+  {
+    "williamboman/mason-lspconfig.nvim",
+    dependencies = { "williamboman/mason.nvim" },
+    config = function()
+      require('mason-lspconfig').setup {
+        automatic_enable = false,
+        ensure_installed = {
+          'gopls',
+          'rust_analyzer',
+          'lua_ls',
+          'vtsls',
+          'eslint',
+          'biome',
+          'jsonls',
+          'html',
+          'cssls',
+          'emmet_language_server',
+        },
+      }
+    end,
+  },
 
--- vim-visual-multi (Sublime/VSCode-style multi-cursor)
-vim.pack.add { 'https://github.com/mg979/vim-visual-multi' }
+  -- lsp
+  {
+    "neovim/nvim-lspconfig",
+    dependencies = { "williamboman/mason-lspconfig.nvim" },
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      vim.api.nvim_create_autocmd('LspAttach', {
+        callback = function(args)
+          local client = vim.lsp.get_client_by_id(args.data.client_id)
+          if not client then return end
+          -- Enable inlay hints
+          -- if client:supports_method('textDocument/inlayHint') then
+          --   vim.lsp.inlay_hint.enable(true, { bufnr = args.buf })
+          -- end
+          -- Basic LSP keymaps (optional)
+          local buf = args.buf
+          vim.keymap.set('n', 'K', vim.lsp.buf.hover, { buffer = buf })
+          vim.keymap.set('n', 'gd', vim.lsp.buf.definition, { buffer = buf })
+          vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
 
--- oil.nvim (file explorer as buffer)
-vim.pack.add { 'https://github.com/stevearc/oil.nvim' }
-local oil_ready = false
-vim.keymap.set('n', '<leader>n', function()
-  if not oil_ready then
-    require('oil').setup {
-      columns = { 'icon' },
-      view_options = { show_hidden = true },
-    }
-    oil_ready = true
-  end
-  require('oil').open()
-end, { desc = 'open oil' })
+          -- signature help: auto-trigger on ( and ,
+          if client:supports_method('textDocument/signatureHelp') then
+            vim.keymap.set('i', '(', function()
+              vim.api.nvim_feedkeys('(', 'n', false)
+              vim.defer_fn(function() vim.lsp.buf.signature_help() end, 50)
+            end, { buffer = buf })
+            vim.keymap.set('i', ',', function()
+              vim.api.nvim_feedkeys(',', 'n', false)
+              vim.defer_fn(function() vim.lsp.buf.signature_help() end, 50)
+            end, { buffer = buf })
+          end
 
--- telescope (lazy-loaded on first keymap use)
-vim.pack.add {
-  'https://github.com/nvim-lua/plenary.nvim',
-  'https://github.com/nvim-telescope/telescope.nvim',
-}
-local telescope_ready = false
-local function tel(picker)
-  return function()
-    if not telescope_ready then
+          -- format on save (per-client logic)
+          if client.name == 'eslint' then
+            -- run ESLint fixAll on save (sync)
+            vim.api.nvim_create_autocmd('BufWritePre', {
+              buffer = buf,
+              callback = function()
+                ---@diagnostic disable-next-line: inject-field
+                local params = vim.lsp.util.make_range_params(0, client.offset_encoding or 'utf-16')
+                ---@diagnostic disable-next-line: inject-field
+                params.context = { only = { 'source.fixAll.eslint' }, diagnostics = {} }
+                local res = vim.lsp.buf_request_sync(buf, 'textDocument/codeAction', params, 2000)
+                for cid, r in pairs(res or {}) do
+                  for _, action in ipairs(r.result or {}) do
+                    if action.edit then
+                      vim.lsp.util.apply_workspace_edit(action.edit, vim.lsp.get_client_by_id(cid).offset_encoding or 'utf-16')
+                    end
+                  end
+                end
+              end,
+            })
+          elseif client.name == 'biome' then
+            vim.api.nvim_create_autocmd('BufWritePre', {
+              buffer = buf,
+              callback = function()
+                local fname = vim.api.nvim_buf_get_name(buf)
+                local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+
+                local output = vim.fn.system({
+                  'biome',
+                  'check',
+                  '--write',
+                  '--stdin-file-path',
+                  fname,
+                }, table.concat(lines, '\n'))
+
+                if #output > 0 then
+                  local result = vim.split(output, '\n', { plain = true })
+                  if result[#result] == '' then table.remove(result) end
+                  vim.api.nvim_buf_set_lines(buf, 0, -1, false, result)
+                end
+              end,
+            })
+          elseif client.name == 'vtsls' then
+            -- skip: let Biome format
+          elseif client:supports_method('textDocument/formatting') then
+            vim.api.nvim_create_autocmd('BufWritePre', {
+              buffer = buf,
+              callback = function()
+                vim.lsp.buf.format({ bufnr = buf, async = false, timeout_ms = 2000, id = client.id })
+              end,
+            })
+          end
+        end,
+      })
+      -- biome only attaches when project has biome config
+      vim.lsp.config('biome', {
+        root_markers = { 'biome.json', 'biome.jsonc' },
+      })
+
+      vim.lsp.enable({
+        'gopls',
+        'rust_analyzer',
+        'lua_ls',
+        'vtsls',  -- vtsls (npm i -g @vtsls/language-server)
+        'eslint', -- vscode-langservers-extracted (npm i -g vscode-langservers-extracted)
+        'biome',  -- biome (npm i -g @biomejs/biome) - gated by biome.json
+        'jsonls', -- json-language-server (from vscode-langservers-extracted)
+        'html',   -- html-language-server (same package)
+        'cssls',  -- css-language-server (same package)
+        'emmet_language_server',
+      })
+    end,
+  },
+
+  -- auto-session
+  {
+    "rmagatti/auto-session",
+    lazy = false,
+    config = function()
+      vim.opt.sessionoptions = 'blank,buffers,curdir,help,tabpages,winsize,winpos,terminal,localoptions'
+      require('auto-session').setup {
+        suppressed_dirs = { '~/', '~/Downloads', '/' },
+      }
+    end,
+  },
+
+  -- mini.nvim
+  {
+    "echasnovski/mini.nvim",
+    version = false,
+    config = function()
+      require('mini.statusline').setup {}
+      require('mini.surround').setup {}
+      require('mini.pairs').setup {}
+      require('mini.icons').setup {}
+      require('mini.icons').mock_nvim_web_devicons() -- so oil/telescope find icons
+    end,
+  },
+
+  -- render markdown
+  {
+    "MeanderingProgrammer/render-markdown.nvim",
+    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      require('render-markdown').setup {}
+      for _, g in ipairs({ 'RenderMarkdownCode', 'RenderMarkdownCodeInline' }) do
+        vim.api.nvim_set_hl(0, g, { bg = 'NONE', ctermbg = 'NONE', fg = 'NONE' })
+      end
+    end,
+  },
+
+  -- neogit
+  {
+    "neogitorg/neogit",
+    cmd = "Neogit",
+    keys = {
+      { "<leader>gs", "<cmd>Neogit<cr>", desc = "open neogit" },
+    },
+  },
+
+  -- gitsigns
+  {
+    "lewis6991/gitsigns.nvim",
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      require('gitsigns').setup {}
+    end,
+  },
+
+  -- vim-visual-multi
+  { "mg979/vim-visual-multi", event = "BufRead" },
+
+  -- oil
+  {
+    "stevearc/oil.nvim",
+    keys = {
+      { "<leader>n", function() require('oil').open() end, desc = "open oil" },
+    },
+    config = function()
+      require('oil').setup {
+        columns = { 'icon' },
+        view_options = { show_hidden = true },
+      }
+    end,
+  },
+
+  -- telescope
+  {
+    "nvim-telescope/telescope.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    cmd = "Telescope",
+    keys = {
+      { "<C-p>", function() require('telescope.builtin').find_files() end, desc = "find files" },
+      { "<C-g>", function() require('telescope.builtin').live_grep() end, desc = "live grep" },
+      { "<leader>sb", function() require('telescope.builtin').buffers() end, desc = "buffers" },
+      { "<leader>sh", function() require('telescope.builtin').help_tags() end, desc = "help tags" },
+      { "<leader>sy", function() require('telescope.builtin').lsp_document_symbols() end, desc = "doc symbols" },
+    },
+    config = function()
       local actions = require('telescope.actions')
       require('telescope').setup {
         defaults = {
@@ -432,39 +507,38 @@ local function tel(picker)
           },
         },
       }
-      telescope_ready = true
-    end
-    require('telescope.builtin')[picker]()
-  end
-end
-vim.keymap.set('n', '<C-p>', tel('find_files'), { desc = 'find files' })
-vim.keymap.set('n', '<C-g>', tel('live_grep'), { desc = 'live grep' })
-vim.keymap.set('n', '<leader>sb', tel('buffers'), { desc = 'buffers' })
-vim.keymap.set('n', '<leader>sh', tel('help_tags'), { desc = 'help tags' })
-vim.keymap.set('n', '<leader>sy', tel('lsp_document_symbols'), { desc = 'doc symbols' })
+    end,
+  },
 
--- tree-sitter (main branch API)
-vim.pack.add { { src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' } }
+  -- treesitter
+  {
+    "nvim-treesitter/nvim-treesitter",
+    branch = "main",
+    lazy = false,
+    build = ":TSUpdate",
+    config = function()
+      local ts_parsers = {
+        'lua', 'go', 'rust', 'vim', 'vimdoc', 'bash', 'json', 'yaml',
+        'markdown', 'markdown_inline',
+        'typescript', 'tsx', 'javascript', 'jsdoc', 'html', 'css', 'graphql', 'prisma', 'toml',
+      }
 
-local ts_parsers = {
-  'lua', 'go', 'rust', 'vim', 'vimdoc', 'bash', 'json', 'yaml',
-  'markdown', 'markdown_inline',
-  'typescript', 'tsx', 'javascript', 'jsdoc', 'html', 'css', 'graphql', 'prisma', 'toml',
-}
+      -- alias jsonc filetype to json parser
+      vim.treesitter.language.register('json', 'jsonc')
+      require('nvim-treesitter.install').install(ts_parsers)
 
--- alias jsonc filetype to json parser
-vim.treesitter.language.register('json', 'jsonc')
-require('nvim-treesitter').install(ts_parsers)
-
-local ts_no_indent = { html = true, css = true }
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = ts_parsers,
-  callback = function(args)
-    pcall(vim.treesitter.start, args.buf)
-    if ts_no_indent[args.match] then
-      vim.bo[args.buf].indentexpr = ''
-    else
-      vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
-    end
-  end,
+      local ts_no_indent = { html = true, css = true }
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = ts_parsers,
+        callback = function(args)
+          pcall(vim.treesitter.start, args.buf)
+          if ts_no_indent[args.match] then
+            vim.bo[args.buf].indentexpr = ''
+          else
+            vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+          end
+        end,
+      })
+    end,
+  },
 })
