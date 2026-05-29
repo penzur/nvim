@@ -275,6 +275,7 @@ require("lazy").setup({
   {
     "williamboman/mason-lspconfig.nvim",
     dependencies = { "williamboman/mason.nvim" },
+    event = "VeryLazy",
     config = function()
       require('mason-lspconfig').setup {
         automatic_enable = false,
@@ -297,7 +298,7 @@ require("lazy").setup({
   -- lsp
   {
     "neovim/nvim-lspconfig",
-    dependencies = { "williamboman/mason-lspconfig.nvim" },
+    dependencies = { "williamboman/mason.nvim" },
     event = { "BufReadPre", "BufNewFile" },
     config = function()
       vim.api.nvim_create_autocmd('LspAttach', {
@@ -518,28 +519,43 @@ require("lazy").setup({
     lazy = false,
     build = ":TSUpdate",
     config = function()
-      local ts_parsers = {
-        'lua', 'go', 'rust', 'vim', 'vimdoc', 'bash', 'json', 'yaml',
-        'markdown', 'markdown_inline',
-        'typescript', 'tsx', 'javascript', 'jsdoc', 'html', 'css', 'graphql', 'prisma', 'toml',
+      require('nvim-treesitter').setup {
+        install_dir = vim.fn.stdpath('data') .. '/site',
+      }
+
+      local ts_filetypes = {
+        'lua', 'go', 'rust', 'vim', 'help', 'sh', 'bash', 'json', 'jsonc', 'yaml',
+        'markdown',
+        'typescript', 'typescriptreact', 'javascript', 'javascriptreact',
+        'html', 'css', 'graphql', 'prisma', 'toml',
       }
 
       -- alias jsonc filetype to json parser
       vim.treesitter.language.register('json', 'jsonc')
-      require('nvim-treesitter.install').install(ts_parsers)
 
       local ts_no_indent = { html = true, css = true }
+      local function start_treesitter(args)
+        local ok = pcall(vim.treesitter.start, args.buf)
+        if not ok then return end
+
+        if ts_no_indent[args.match] then
+          vim.bo[args.buf].indentexpr = ''
+        else
+          vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+        end
+      end
+
       vim.api.nvim_create_autocmd('FileType', {
-        pattern = ts_parsers,
-        callback = function(args)
-          pcall(vim.treesitter.start, args.buf)
-          if ts_no_indent[args.match] then
-            vim.bo[args.buf].indentexpr = ''
-          else
-            vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
-          end
-        end,
+        pattern = ts_filetypes,
+        callback = start_treesitter,
       })
+
+      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        local ft = vim.bo[buf].filetype
+        if vim.tbl_contains(ts_filetypes, ft) then
+          start_treesitter({ buf = buf, match = ft })
+        end
+      end
     end,
   },
 })
