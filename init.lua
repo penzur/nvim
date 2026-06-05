@@ -259,7 +259,7 @@ require("lazy").setup({
     lazy = false,
     priority = 1000,
     config = function()
-      vim.cmd.colorscheme('kanagawa')
+      vim.cmd.colorscheme('kanagawa-dragon')
     end,
   },
 
@@ -530,8 +530,16 @@ require("lazy").setup({
         'html', 'css', 'graphql', 'prisma', 'toml',
       }
 
-      -- alias jsonc filetype to json parser
-      vim.treesitter.language.register('json', 'jsonc')
+      -- register query-only languages (ecma, jsx) so their highlight queries
+      -- can be loaded via inheritance (tsx inherits jsx, typescript inherits ecma)
+      local function query_only_lang(lang, parser)
+        local path = vim.api.nvim_get_runtime_file('parser/' .. parser .. '.so', false)[1]
+        if path then
+          vim.treesitter.language.add(lang, { path = path, symbol_name = parser })
+        end
+      end
+      query_only_lang('ecma', 'typescript')
+      query_only_lang('jsx', 'tsx')
 
       local ts_no_indent = { html = true, css = true }
       local function start_treesitter(args)
