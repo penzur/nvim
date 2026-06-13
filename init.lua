@@ -253,15 +253,8 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
   -- colorschemes
-  { "folke/tokyonight.nvim",  lazy = false,     priority = 1000 },
-  {
-    "rebelot/kanagawa.nvim",
-    lazy = false,
-    priority = 1000,
-    config = function()
-      vim.cmd.colorscheme('kanagawa-dragon')
-    end,
-  },
+  { "folke/tokyonight.nvim", lazy = false, priority = 1000 },
+  { "rebelot/kanagawa.nvim", lazy = false, priority = 1000 },
 
   -- mason
   {
@@ -567,3 +560,5 @@ require("lazy").setup({
     end,
   },
 })
+
+vim.cmd.colorscheme('kanagawa-dragon')
