@@ -60,6 +60,8 @@ vim.keymap.set("n", "<C-h>", ":bp<CR>")
 -- vim.keymap.set("n", "<C-l>", ":tabNext<CR>")
 -- vim.keymap.set("n", "<C-h>", ":tabprevious<CR>")
 vim.keymap.set("n", "<C-s>", ":w<CR>")
+vim.keymap.set("x", "<C-j>", ":m '>+1<CR>gv=gv", { desc = "Move selected lines down" })
+vim.keymap.set("x", "<C-k>", ":m '<-2<CR>gv=gv", { desc = "Move selected lines up" })
 
 -- diagnostics
 vim.keymap.set("n", "<leader>dl", vim.diagnostic.setloclist, { desc = "Open diagnostic [Q]uickfix [L]ist" })
